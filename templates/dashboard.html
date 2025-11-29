@@ -14,7 +14,7 @@
         </a>
 
         <!-- Clasificador/Filtro por Tipo de Equipo -->
-        <form method="GET" action="{{ url_for('dashboard') }}" class="w-full md:w-auto flex items-center space-x-2">
+        <form method="GET" action="{{ url_for('dashboard') }}" class="w-full md:w-auto flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2">
             <label for="tipo_equipo" class="text-gray-700 font-medium whitespace-nowrap">Clasificar por:</label>
             <select name="tipo" id="tipo_equipo" onchange="this.form.submit()"
                     class="block w-full md:w-64 border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-tecnm focus:border-tecnm bg-white">
@@ -30,7 +30,8 @@
     <!-- Tabla de Inventario -->
     {% if equipos %}
     <div class="shadow-2xl rounded-xl overflow-hidden ring-1 ring-gray-200">
-        <div class="overflow-x-auto">
+        <!-- Hacemos el contenedor scrollable en pantallas pequeñas -->
+        <div class="table-responsive overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-100">
                     <tr>
@@ -44,17 +45,17 @@
                 <tbody class="bg-white divide-y divide-gray-100">
                     {% for equipo in equipos %}
                     <tr class="hover:bg-gray-50 transition duration-100">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-tecnm">{{ equipo.numero_inventario }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <td class="px-6 py-4 sm:whitespace-nowrap text-sm font-bold text-tecnm">{{ equipo.numero_inventario }}</td>
+                        <td class="px-6 py-4 sm:whitespace-nowrap text-sm text-gray-700">
                             <strong class="text-gray-800">{{ equipo.equipo }}</strong><br>
                             <span class="text-xs text-gray-500">{{ equipo.marca or 'N/A' }} / {{ equipo.modelo or 'N/A' }}</span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <td class="px-6 py-4 sm:whitespace-nowrap text-sm text-gray-700">
                             {{ equipo.departamento or 'Sin Asignar' }}<br>
                             <!-- Acceso a la columna renombrada: 'nombre' -->
                             <span class="text-xs text-gray-500">Resp: {{ equipo.nombre or 'Sin Responsable' }}</span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        <td class="px-6 py-4 sm:whitespace-nowrap text-sm text-center">
                             {% if equipo.estado == 'Activo' %}
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">ACTIVO</span>
                             {% else %}
@@ -63,11 +64,11 @@
                                 </span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        <td class="px-6 py-4 sm:whitespace-nowrap text-center text-sm font-medium">
                             {% if session['role'] == 'admin' %}
                             <!-- Botón de eliminación (Solo visible para administradores) -->
-                            <form action="{{ url_for('eliminar_equipo', equipo_id=equipo.id) }}" method="POST" class="inline" onsubmit="return confirm('¿CONFIRMAS eliminar permanentemente el equipo {{ equipo.numero_inventario }} y todos sus registros? Esta acción es IRREVERSIBLE.');">
-                                <button type="submit" class="text-red-600 hover:text-white bg-white hover:bg-red-700 border border-red-600 px-3 py-1 rounded-lg ml-2 transition duration-150 ease-in-out shadow-sm">
+                            <form action="{{ url_for('eliminar_equipo', equipo_id=equipo.id) }}" method="POST" class="inline w-full md:w-auto" onsubmit="return confirm('¿CONFIRMAS eliminar permanentemente el equipo?');">
+                                <button type="submit" class="text-red-600 hover:text-white bg-white hover:bg-red-700 border border-red-600 px-3 py-1 rounded-lg ml-0 md:ml-2 transition duration-150 ease-in-out w-full md:w-auto">
                                     Eliminar
                                 </button>
                             </form>
@@ -85,7 +86,7 @@
     <!-- Mensaje si no hay equipos o el filtro no devuelve resultados -->
     <div class="text-center py-12 bg-white rounded-xl shadow-lg border border-gray-200">
         <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.844A2.25 2.25 0 0117.375 21H5.625a2.25 2.25 0 01-2.249-2.156L3.75 7.5M10 11.25h4M10 15h4m-7.5-3h-.008v.008h.008V12zm7.5 0h.008v.008h.008V12z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.844A2.25 2.25 0 0117.375 21H5.625a2.25 2.25 0 01-2.249-2.156L3.75 7.5M10 11.25h4M10 15h4m-7.5-3h-.008v.008h.00" />
         </svg>
         <h3 class="mt-2 text-xl font-medium text-gray-900">{% if filtro_tipo %}No hay equipos de tipo '{{ filtro_tipo }}'{% else %}Inventario Vacío{% endif %}</h3>
         <p class="mt-1 text-sm text-gray-500">
@@ -96,7 +97,7 @@
             {% endif %}
         </p>
         <div class="mt-6">
-            <a href="{{ url_for('agregar_equipo') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-tecnm hover:bg-tecnm-dark transition">
+            <a href="{{ url_for('agregar_equipo') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-tecnm hover:bg-tecnm-dark">
                 Registrar Primer Equipo
             </a>
         </div>
