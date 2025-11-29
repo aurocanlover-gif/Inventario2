@@ -1,0 +1,100 @@
+/* Responsive base (mobile-first) */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  line-height: 1.4;
+  color: #111;
+  background: #fff;
+}
+
+/* Contenedor central */
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Layout responsive con grid */
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+/* Imágenes y videos fluidos */
+img, video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Navegación simple responsive */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #0b74de;
+  color: white;
+}
+.nav .brand { font-weight: 600; }
+.menu-button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+}
+.nav-links {
+  display: none;
+  gap: 1rem;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 0;
+}
+
+/* Active class for toggled menu */
+.nav-links.active { display: flex; }
+
+/* Tables: allow horizontal scroll on small screens */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Forms: full width controls on small screens */
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+input[type="text"], input[type="number"], select, textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+/* Desktop / Tablet breakpoints */
+@media (min-width: 768px) {
+  .menu-button { display: none; }
+  .nav-links {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .form-row {
+    flex-direction: row;
+  }
+  .form-row > * { flex: 1; }
+}
+
+@media (min-width: 1024px) {
+  .container { padding: 0 2rem; }
+}
