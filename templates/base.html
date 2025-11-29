@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Inventario TECNM{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; }
+        /* Definición de color primario TECNM: un teal oscuro */
+        .bg-tecnm { background-color: #00897b; } 
+        .hover\:bg-tecnm-dark:hover { background-color: #00695c; }
+        .text-tecnm { color: #00897b; }
+        .border-tecnm { border-color: #00897b; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col pt-16 md:pt-0">
+    
+    <!-- Barra de Navegación (Fija en dispositivos grandes, arriba) -->
+    <header class="bg-gray-800 text-white shadow-lg fixed top-0 w-full z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="relative flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <span class="text-2xl font-extrabold text-tecnm">TECNM</span><span class="text-white text-lg ml-1 hidden sm:inline"> | Inventario</span>
+                </div>
+                
+                {% if session.get('username') %}
+                <!-- Menu Desktop -->
+                <div class="hidden md:block">
+                    <div class="flex space-x-4 items-center">
+                        <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition">Dashboard</a>
+                        <a href="{{ url_for('agregar_equipo') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition">Agregar</a>
+                        <a href="{{ url_for('registrar_baja') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition">Baja</a>
+                        <a href="{{ url_for('consulta') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition">Consultar</a>
+                        <a href="{{ url_for('ver_bajas') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition">Ver Bajas</a>
+                    </div>
+                </div>
+
+                <!-- Info Usuario y Salir -->
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm hidden lg:block">Usuario: <strong class="text-tecnm">{{ session['username'] }}</strong></span>
+                    <a href="{{ url_for('logout') }}" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out shadow-md">Salir</a>
+                    
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-btn" type="button" class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <div class="md:hidden hidden bg-gray-700" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="{{ url_for('dashboard') }}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-600">Dashboard</a>
+                <a href="{{ url_for('agregar_equipo') }}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-600">Agregar Equipo</a>
+                <a href="{{ url_for('registrar_baja') }}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-600">Dar de Baja</a>
+                <a href="{{ url_for('consulta') }}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-600">Consultar Estado</a>
+                <a href="{{ url_for('ver_bajas') }}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-600">Ver Bajas</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Bloque para mostrar mensajes Flash (éxito/error) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="fixed top-16 md:top-0 left-1/2 transform -translate-x-1/2 mt-4 z-50 w-full max-w-lg px-4">
+            {% for category, message in messages %}
+                {% set color = 'red' if category == 'error' else 'tecnm' %}
+                {% set bg_color = 'red-100' if category == 'error' else 'teal-100' %}
+                {% set text_color = 'red-800' if category == 'error' else 'tecnm' %}
+
+                <div class="bg-{{ bg_color }} border-l-4 border-{{ color }} text-{{ text_color }} p-4 mb-3 rounded-lg shadow-md" role="alert">
+                    <p class="font-medium">{{ 'Éxito' if category == 'success' else 'Atención' if category == 'warning' else 'Error' }}:</p>
+                    <p class="text-sm">{{ message }}</p>
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    <!-- Fin del Bloque Flash -->
+
+    <main class="flex-grow pt-4 md:pt-4">
+        {% block main_content %}{% endblock %}
+    </main>
+
+    <script>
+        // Lógica para el menú móvil
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            if (menuBtn) {
+                menuBtn.addEventListener('click', function() {
+                    menu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

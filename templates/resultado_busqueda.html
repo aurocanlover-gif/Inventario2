@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Resultado de Búsqueda{% endblock %}
+
+{% block main_content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+    <div class="max-w-lg mx-auto bg-white p-8 rounded-xl shadow-2xl border border-gray-100">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b border-tecnm pb-2">Resultado de la Consulta</h1>
+        
+        {% if error %}
+        <!-- Mensaje de error si el equipo no se encuentra -->
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg" role="alert">
+            <p class="font-bold">Error de Búsqueda</p>
+            <p class="text-sm mt-1">{{ error }}</p>
+        </div>
+        {% elif equipo %}
+        <!-- Muestra los detalles del equipo encontrado -->
+        <div class="p-6 rounded-xl shadow-inner {{ 'border-l-4 border-red-500 bg-red-50' if equipo.estado == 'Baja' else 'border-l-4 border-green-500 bg-green-50' }}">
+            <p class="font-bold text-xl mb-3">Equipo Encontrado: <span class="text-tecnm">{{ equipo.numero_inventario }}</span></p>
+            
+            <div class="space-y-2 text-gray-700">
+                <div class="flex justify-between items-start border-b border-gray-200 pb-2">
+                    <strong class="font-medium text-gray-600">Tipo de Equipo:</strong>
+                    <span class="text-right">{{ equipo.equipo }}</span>
+                </div>
+                <div class="flex justify-between items-start border-b border-gray-200 pb-2">
+                    <strong class="font-medium text-gray-600">Marca / Modelo:</strong>
+                    <span class="text-right">{{ equipo.marca }} / {{ equipo.modelo }}</span>
+                </div>
+                <div class="flex justify-between items-start border-b border-gray-200 pb-2">
+                    <strong class="font-medium text-gray-600">Departamento:</strong>
+                    <span class="text-right">{{ equipo.departamento }}</span>
+                </div>
+                <div class="flex justify-between items-start border-b border-gray-200 pb-2">
+                    <strong class="font-medium text-gray-600">Responsable:</strong>
+                    <span class="text-right">{{ equipo.nombre_responsable }}</span>
+                </div>
+                <div class="flex justify-between items-start pt-2">
+                    <strong class="font-medium text-gray-600">Estado Actual:</strong>
+                    {% if equipo.estado == 'Activo' %}
+                        <span class="text-green-600 font-bold px-3 py-1 rounded-full bg-green-100">ACTIVO</span>
+                    {% else %}
+                        <span class="text-red-600 font-bold px-3 py-1 rounded-full bg-red-100">DADO DE BAJA</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if equipo.estado == 'Baja' %}
+            <div class="mt-4 pt-4 border-t border-red-300">
+                <strong class="font-bold text-red-700">Motivo de Baja:</strong>
+                <p class="text-red-600 italic text-sm mt-1">{{ equipo.motivo_baja }}</p>
+            </div>
+            {% endif %}
+
+        </div>
+        {% endif %}
+
+        <div class="mt-8 text-center">
+            <a href="{{ url_for('consulta') }}" class="inline-flex items-center text-tecnm hover:text-tecnm-dark font-medium transition duration-150">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+                Realizar otra Consulta
+            </a>
+            <span class="text-gray-400 mx-3">|</span>
+            <a href="{{ url_for('dashboard') }}" class="inline-flex items-center text-gray-600 hover:text-gray-800 font-medium transition duration-150">
+                Volver al Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

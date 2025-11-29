@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Agregar Equipo | Inventario TECNM campus Perote {% endblock %}
+
+{% block main_content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-10 max-w-2xl">
+    <div class="bg-white p-8 rounded-xl shadow-2xl border border-gray-100">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b border-tecnm pb-2">
+            Registro de Nuevo Equipo
+        </h1>
+        
+        <form method="POST" action="{{ url_for('agregar_equipo') }}" class="space-y-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Número de Inventario -->
+                <div>
+                    <label for="numero_inventario" class="block text-sm font-medium text-gray-700">Número de Inventario <span class="text-red-500">*</span></label>
+                    <input type="text" name="numero_inventario" id="numero_inventario" required 
+                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-tecnm focus:border-tecnm uppercase"
+                           placeholder="Ej: TECNM-00123">
+                </div>
+                
+                <!-- Equipo -->
+                <div>
+                    <label for="equipo" class="block text-sm font-medium text-gray-700">Tipo de Equipo <span class="text-red-500">*</span></label>
+                    <input type="text" name="equipo" id="equipo" required 
+                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-tecnm focus:border-tecnm"
+                           placeholder="Ej: Laptop, Monitor, Impresora">
+                </div>
+
+                <!-- Marca -->
+                <div>
+                    <label for="marca" class="block text-sm font-medium text-gray-700">Marca</label>
+                    <input type="text" name="marca" id="marca" 
+                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-tecnm focus:border-tecnm"
+                           placeholder="Ej: Dell, HP, Epson">
+                </div>
+
+                <!-- Modelo -->
+                <div>
+                    <label for="modelo" class="block text-sm font-medium text-gray-700">Modelo</label>
+                    <input type="text" name="modelo" id="modelo" 
+                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-tecnm focus:border-tecnm"
+                           placeholder="Ej: Latitude 5420">
+                </div>
+
+                <!-- Número de Serie -->
+                <div class="md:col-span-2">
+                    <label for="numero_serie" class="block text-sm font-medium text-gray-700">Número de Serie (S/N)</label>
+                    <input type="text" name="numero_serie" id="numero_serie" 
+                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-tecnm focus:border-tecnm"
+                           placeholder="Ej: GJH45K-03J9F-0L9A">
+                </div>
+
+                <!-- Departamento -->
+                <div>
+                    <label for="departamento" class="block text-sm font-medium text-gray-700">Departamento/Área <span class="text-red-500">*</span></label>
+                    <input type="text" name="departamento" id="departamento" required
+                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-tecnm focus:border-tecnm"
+                           placeholder="Ej: Cómputo, Recursos Financieros">
+                </div>
+
+                <!-- Nombre del Responsable -->
+                <div>
+                    <label for="nombre_responsable" class="block text-sm font-medium text-gray-700">Nombre del Responsable</label>
+                    <input type="text" name="nombre_responsable" id="nombre_responsable" 
+                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-tecnm focus:border-tecnm"
+                           placeholder="Ej: Juan Pérez">
+                </div>
+
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-tecnm text-white py-3 px-4 rounded-lg font-semibold shadow-xl hover:bg-tecnm-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tecnm transition duration-150">
+                Guardar Equipo en Inventario
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

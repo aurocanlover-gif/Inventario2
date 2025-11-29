@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Consultar Estado | Inventario TECNM{% endblock %}
+
+{% block main_content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-10 max-w-2xl">
+    <div class="bg-white p-8 rounded-xl shadow-2xl border border-gray-100">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b border-tecnm pb-2">
+            Consultar Estado por Inventario
+        </h1>
+        
+        <form method="POST" action="{{ url_for('consulta') }}" class="mb-8 flex space-x-3">
+            <input type="text" name="numero_inventario" required 
+                   class="flex-grow border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-tecnm focus:border-tecnm uppercase"
+                   placeholder="Ingrese el Número de Inventario (Ej: TECNM-00123)">
+            <button type="submit"
+                    class="bg-tecnm text-white py-2 px-6 rounded-lg font-semibold shadow-md hover:bg-tecnm-dark transition duration-150">
+                Buscar
+            </button>
+        </form>
+
+        {% if equipo %}
+        <div class="mt-8 p-6 rounded-xl shadow-inner border {{ 'border-red-500 bg-red-50' if equipo.estado == 'Baja' else 'border-green-500 bg-green-50' }}">
+            <h2 class="text-2xl font-bold {{ 'text-red-700' if equipo.estado == 'Baja' else 'text-green-700' }} mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    {% if equipo.estado == 'Baja' %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 3h.01m-6.938 4.757a4.99 4.99 0 01-2.613-.715 4.8 4.8 0 01-1.353-1.353 4.99 4.99 0 01-.715-2.613L1.5 12l2.484-7.57a4.99 4.99 0 01.715-2.613 4.8 4.8 0 011.353-1.353 4.99 4.99 0 012.613-.715L12 1.5l7.57 2.484a4.99 4.99 0 012.613.715 4.8 4.8 0 011.353 1.353 4.99 4.99 0 01.715 2.613L22.5 12l-2.484 7.57a4.99 4.99 0 01-.715 2.613 4.8 4.8 0 01-1.353 1.353 4.99 4.99 0 01-2.613.715L12 22.5z"></path>
+                    {% else %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    {% endif %}
+                </svg>
+                ESTADO: {{ equipo.estado.upper() }}
+            </h2>
+            
+            <p class="mb-4 text-gray-700">
+                <strong class="font-semibold">Inventario No:</strong> {{ equipo.numero_inventario }}
+            </p>
+
+            <div class="border-t border-gray-200 pt-4">
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-gray-500">Tipo de Equipo:</dt>
+                        <dd class="text-gray-900">{{ equipo.equipo }} ({{ equipo.marca }} {{ equipo.modelo }})</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-gray-500">No. de Serie:</dt>
+                        <dd class="text-gray-900">{{ equipo.numero_serie }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-gray-500">Departamento:</dt>
+                        <dd class="text-gray-900">{{ equipo.departamento }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-gray-500">Responsable:</dt>
+                        <dd class="text-gray-900">{{ equipo.nombre_responsable }}</dd>
+                    </div>
+
+                    {% if equipo.estado == 'Baja' %}
+                    <div class="sm:col-span-2 mt-4 pt-4 border-t border-red-200">
+                        <dt class="font-bold text-red-600">Motivo de Baja:</dt>
+                        <dd class="text-red-800">{{ equipo.motivo_baja }}</dd>
+                    </div>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

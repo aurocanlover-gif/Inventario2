@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-minus-circle"></i> Registrar Baja de Equipo
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text text-muted mb-4">
+                        Ingresa el número de inventario del equipo que será dado de baja y el motivo.
+                    </p>
+
+                    <form method="POST" action="{{ url_for('registrar_baja') }}">
+                        <div class="mb-3">
+                            <label for="numero_inventario" class="form-label">
+                                <strong>Número de Inventario</strong>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="numero_inventario" 
+                                   name="numero_inventario" 
+                                   required 
+                                   placeholder="Ej: INV-001"
+                                   style="text-transform: uppercase;">
+                            <div class="form-text">
+                                Asegúrate de que este número coincida exactamente con el equipo activo.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="motivo" class="form-label">
+                                <strong>Motivo de la Baja</strong>
+                            </label>
+                            <textarea class="form-control" 
+                                      id="motivo" 
+                                      name="motivo" 
+                                      rows="4" 
+                                      required 
+                                      placeholder="Describe claramente por qué se está dando de baja este activo..."></textarea>
+                            <div class="form-text">
+                                Describe claramente por qué se está dando de baja este activo.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="fas fa-exclamation-triangle"></i> Confirmar Baja de Equipo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-2">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </a>
+                <a href="{{ url_for('ver_bajas') }}" class="btn btn-info">
+                    <i class="fas fa-list"></i> Ver Equipos Dados de Baja
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Convertir automáticamente a mayúsculas el número de inventario
+document.getElementById('numero_inventario').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+});
+
+// Confirmación antes de enviar el formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    const numeroInventario = document.getElementById('numero_inventario').value;
+    const motivo = document.getElementById('motivo').value;
+    
+    if (!confirm(`¿Estás seguro de que deseas dar de baja el equipo ${numeroInventario}?\n\nMotivo: ${motivo}\n\nEsta acción cambiará el estado del equipo a "Baja".`)) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}
