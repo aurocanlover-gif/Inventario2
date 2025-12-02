@@ -475,12 +475,14 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    """Carga los equipos ACTIVOS (donde estado NO es 'Baja')."""
     db = get_db()
     
     filtro_tipo = request.args.get('tipo', '')
     
-    # Consulta equipos activos
-    query = 'SELECT * FROM equipos WHERE estado = "Activo"'
+    # EL CAMBIO CRUCIAL: Usamos 'WHERE estado != "Baja"' para excluir explícitamente los equipos dados de baja.
+    # Esto es más seguro que solo buscar "Activo", ya que maneja inconsistencias en mayúsculas/minúsculas.
+    query = 'SELECT * FROM equipos WHERE estado != "Baja"'
     params = []
 
     if filtro_tipo:
@@ -489,15 +491,21 @@ def dashboard():
         
     query += ' ORDER BY fecha_registro DESC'
     
-    equipos_activos = db.execute(query, params).fetchall()
-
-    tipos_disponibles = db.execute('SELECT DISTINCT equipo FROM equipos ORDER BY equipo ASC').fetchall()
-    tipos_disponibles = [t[0] for t in tipos_disponibles]
+    try:
+        equipos_activos = db.execute(query, params).fetchall()
+        tipos_disponibles = db.execute('SELECT DISTINCT equipo FROM equipos ORDER BY equipo ASC').fetchall()
+        tipos_disponibles = [t[0] for t in tipos_disponibles]
+    except Exception as e:
+        print(f"Error al cargar dashboard o tipos: {e}")
+        flash('Error al cargar datos del inventario activo.', 'error')
+        equipos_activos = []
+        tipos_disponibles = []
 
     return render_template('dashboard.html', 
-                            equipos=equipos_activos, 
-                            tipos_disponibles=tipos_disponibles,
-                            filtro_tipo=filtro_tipo)
+                           equipos=equipos_activos, 
+                           tipos_disponibles=tipos_disponibles,
+                           filtro_tipo=filtro_tipo)
+
 
 
 @app.route('/agregar', methods=['GET', 'POST'])
@@ -548,7 +556,10 @@ def agregar_equipo():
 @app.route('/baja', methods=['GET', 'POST'])
 @login_required
 def registrar_baja():
-    """Ruta para marcar un equipo como 'Baja' y registrarlo en la tabla 'bajas'."""
+    """
+    Ruta para marcar un equipo como 'Baja', asegurar que la tabla 'bajas' esté completa,
+    y registrar el historial de la baja.
+    """
     if request.method == 'POST':
         numero_inventario = request.form['numero_inventario'].strip().upper()
         motivo = request.form['motivo'].strip()
@@ -557,91 +568,106 @@ def registrar_baja():
         db = get_db()
         cursor = db.cursor()
         
-        # 1. Verificar si el equipo existe y no está ya de baja
-        equipo = db.execute('SELECT * FROM equipos WHERE numero_inventario = ?', (numero_inventario,)).fetchone()
-        
-        if not equipo:
-            flash(f'Error: El equipo {numero_inventario} no fue encontrado en el inventario.', 'error')
-        elif equipo['estado'] == 'Baja':
-            flash(f'Error: El equipo {numero_inventario} ya está registrado como BAJA.', 'warning')
-        else:
-            try:
-                # Verificar si ya existe en la tabla bajas (usar numero_inventario, no id)
-                baja_existente = db.execute(
-                    'SELECT numero_inventario FROM bajas WHERE numero_inventario = ?',
-                    (numero_inventario,)
-                ).fetchone()
-                
-                if baja_existente:
-                    flash(f'Error: El equipo {numero_inventario} ya existe en la tabla de bajas.', 'warning')
-                    return redirect(url_for('ver_bajas'))
-                
-                # Función auxiliar para obtener valores de Row objects
-                def get_val(row, key, default=None):
-                    try:
-                        val = row[key]
-                        return val if val is not None else default
-                    except (KeyError, IndexError):
-                        return default
-                
-                # Obtener columnas de la tabla bajas y detectar clave primaria
-                table_info = db.execute("PRAGMA table_info(bajas)").fetchall()
-                bajas_columns = [info[1] for info in table_info]
-                
-                # Encontrar la columna PRIMARY KEY (id autoincremental)
-                pk_column = None
-                for info in table_info:
-                    if info[5] == 1:  # pk es el índice 5
-                        pk_column = info[1]
-                        break
-                
-                # Preparar datos para insertar (solo columnas que existen)
-                datos_equipo = {
-                    'id': equipo['id'],
-                    'inventario': equipo['numero_inventario'],
-                    'equipo': equipo['equipo'],
-                    'marca': get_val(equipo, 'marca'),
-                    'modelo': get_val(equipo, 'modelo'),
-                    'numero_serie': get_val(equipo, 'numero_serie'),
-                    'departamento': equipo['departamento'],
-                    'nombre': get_val(equipo, 'nombre'),
-                    'ubicacion': get_val(equipo, 'ubicacion'),
-                    'revisar': get_val(equipo, 'revisar'),
-                    'observaciones': get_val(equipo, 'observaciones'),
-                    'motivo_baja': motivo,
-                    'fecha_baja': fecha_baja,
-                    'fecha_registro': get_val(equipo, 'fecha_registro')
-                }
-                
-                # Filtrar columnas que existen y excluir la clave primaria autoincremental
-                columnas_disponibles = [
-                    col for col in datos_equipo.keys() 
-                    if col in bajas_columns and col != pk_column
-                ]
-                valores = [datos_equipo[col] for col in columnas_disponibles]
-                
-                # Construir y ejecutar INSERT dinámico
-                columnas_str = ', '.join(columnas_disponibles)
-                placeholders = ', '.join(['?'] * len(columnas_disponibles))
-                
-                cursor.execute(f'''
-                    INSERT INTO bajas ({columnas_str})
-                    VALUES ({placeholders})
-                ''', valores)
-                
-                # 3. Actualizar el estado del equipo en la tabla equipos
-                cursor.execute('''
-                    UPDATE equipos
-                    SET estado = ?, motivo_baja = ?, fecha_baja = ?
-                    WHERE numero_inventario = ?
-                ''', ('Baja', motivo, fecha_baja, numero_inventario))
-                
-                db.commit()
-                flash(f'Equipo {numero_inventario} dado de BAJA exitosamente. Motivo: {motivo}', 'success')
+        try:
+            # 0. ASEGURAR ESTRUCTURA DE LA TABLA 'bajas'
+            # Esta sección verifica y añade las columnas cruciales si faltan.
+            table_info = db.execute("PRAGMA table_info(bajas)").fetchall()
+            bajas_columns = [info[1] for info in table_info]
+
+            # Columnas requeridas para el registro de baja
+            for col in ['motivo_baja', 'fecha_baja']:
+                if col not in bajas_columns:
+                    print(f"La columna '{col}' no existe en la tabla 'bajas'. Añadiendo...")
+                    # Añade la columna como TEXTO
+                    cursor.execute(f'ALTER TABLE bajas ADD COLUMN {col} TEXT')
+                    # Vuelve a cargar las columnas de la tabla para el proceso de inserción
+                    table_info = db.execute("PRAGMA table_info(bajas)").fetchall()
+                    bajas_columns = [info[1] for info in table_info]
+                    db.commit() # Confirma la estructura de la tabla
+
+            # 1. Verificar si el equipo existe y no está ya de baja
+            # Usamos UPPER() para asegurar una búsqueda sin distinción de mayúsculas/minúsculas
+            equipo = db.execute('SELECT * FROM equipos WHERE UPPER(numero_inventario) = ?', (numero_inventario,)).fetchone()
+            
+            if not equipo:
+                flash(f'Error: El equipo {numero_inventario} no fue encontrado en el inventario.', 'error')
+                return redirect(url_for('baja'))
+            
+            if equipo['estado'] == 'Baja':
+                flash(f'Error: El equipo {numero_inventario} ya está registrado como BAJA.', 'warning')
                 return redirect(url_for('ver_bajas'))
-            except Exception as e:
-                db.rollback()
-                flash(f'Ocurrió un error al registrar la baja: {e}', 'error')
+            
+            
+            # 2. Verificar si ya existe en la tabla bajas (usando el nombre 'inventario' de la tabla 'bajas')
+            baja_existente = db.execute(
+                'SELECT inventario FROM bajas WHERE inventario = ?',
+                (numero_inventario,)
+            ).fetchone()
+            
+            if baja_existente:
+                flash(f'Error: El equipo {numero_inventario} ya existe en la tabla de bajas.', 'warning')
+                return redirect(url_for('ver_bajas'))
+            
+            # --- Lógica de preparación de datos para INSERT en tabla 'bajas' ---
+            
+            # Función auxiliar para obtener valores de Row objects
+            def get_val(row, key, default=None):
+                try:
+                    val = row[key]
+                    return val if val is not None else default
+                except (KeyError, IndexError):
+                    return default
+            
+            # Encontrar la columna PRIMARY KEY autoincremental de 'bajas'
+            pk_column = next((info[1] for info in table_info if info[5] == 1), None)
+            
+            # Mapeo de datos desde 'equipos' a 'bajas'
+            datos_a_insertar = {
+                # Columnas de la tabla 'bajas' = Valor de la tabla 'equipos'
+                'ubicacion': get_val(equipo, 'ubicacion'),
+                'equipo': get_val(equipo, 'equipo'), 
+                'marca': get_val(equipo, 'marca'),
+                'modelo': get_val(equipo, 'modelo'),
+                'revisar': get_val(equipo, 'revisar'),
+                'observaciones': get_val(equipo, 'observaciones'),
+                'id': get_val(equipo, 'id'), 
+                'equipo_id': get_val(equipo, 'id'), 
+                'fecha_registro_original': get_val(equipo, 'fecha_registro'), 
+                
+                # Columnas añadidas y específicas de la Baja:
+                'motivo_baja': motivo,
+                'fecha_baja': fecha_baja,
+                
+                # Columna con nombre diferente (Mapeo: numero_inventario -> inventario)
+                # ¡CORRECCIÓN APLICADA AQUÍ! Se usa get_val() en lugar de .get()
+                'inventario': get_val(equipo, 'numero_inventario'), 
+            }
+
+            # Filtrar las columnas que existen y no son la clave primaria autoincremental
+            columnas_validas = [col for col in datos_a_insertar.keys() if col in bajas_columns and col != pk_column]
+            valores_a_insertar = [datos_a_insertar[col] for col in columnas_validas]
+            
+            columnas_str = ', '.join(columnas_validas)
+            placeholders = ', '. join(['?'] * len(columnas_validas))
+            
+            # Ejecutar INSERT en la tabla 'bajas'
+            cursor.execute(f'INSERT INTO bajas ({columnas_str}) VALUES ({placeholders})', valores_a_insertar)
+            
+            # 3. Actualizar el estado del equipo en la tabla 'equipos'
+            cursor.execute('''
+                UPDATE equipos
+                SET estado = ?, motivo_baja = ?, fecha_baja = ?
+                WHERE UPPER(numero_inventario) = ?
+            ''', ('Baja', motivo, fecha_baja, numero_inventario))
+            
+            db.commit()
+            flash(f'Equipo {numero_inventario} dado de BAJA exitosamente. Motivo: {motivo}', 'success')
+            return redirect(url_for('ver_bajas'))
+
+        except Exception as e:
+            db.rollback()
+            flash(f'Ocurrió un error al registrar la baja: {e}', 'error')
+            print(f"Error durante el proceso de baja: {e}")
 
     return render_template('baja.html')
 
