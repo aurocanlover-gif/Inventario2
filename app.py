@@ -597,8 +597,8 @@ def registrar_baja():
                 
                 # Preparar datos para insertar (solo columnas que existen)
                 datos_equipo = {
-                    'equipo_id': equipo['id'],
-                    'numero_inventario': equipo['numero_inventario'],
+                    'id': equipo['id'],
+                    'inventario': equipo['numero_inventario'],
                     'equipo': equipo['equipo'],
                     'marca': get_val(equipo, 'marca'),
                     'modelo': get_val(equipo, 'modelo'),
@@ -610,7 +610,7 @@ def registrar_baja():
                     'observaciones': get_val(equipo, 'observaciones'),
                     'motivo_baja': motivo,
                     'fecha_baja': fecha_baja,
-                    'fecha_registro_original': get_val(equipo, 'fecha_registro')
+                    'fecha_registro': get_val(equipo, 'fecha_registro')
                 }
                 
                 # Filtrar columnas que existen y excluir la clave primaria autoincremental
@@ -674,62 +674,52 @@ def ver_bajas():
     """Ruta para ver el listado de equipos dados de baja desde la tabla 'bajas'."""
     db = get_db()
     
-    # Verificar qué columnas tiene la tabla bajas y encontrar la clave primaria
+    # Intenta obtener la información de la tabla para determinar la clave primaria
+    # y las columnas de fecha.
+    primary_key = 'id'  # Asumir 'id' por defecto
+    order_by_col = 'fecha_registro' # Ordenar por la columna de fecha de baja si existe
+
     try:
+        # Optimización: Consultar directamente todos los registros ordenados
+        # Si la columna 'fecha_registro' existe (asumo que es tu columna de fecha)
+        # usamos esa para ordenar. Si no, usamos la clave primaria.
+        
+        # 1. Intentar detectar la columna de fecha para ordenar
         table_info = db.execute("PRAGMA table_info(bajas)").fetchall()
         bajas_columns = [info[1] for info in table_info]
         
-        # Encontrar la clave primaria (columna con pk=1)
-        primary_key = None
-        for info in table_info:
-            if info[5] == 1:  # pk es el índice 5 en PRAGMA table_info
-                primary_key = info[1]
-                break
+        if 'fecha_registro' not in bajas_columns:
+             order_by_col = primary_key
+
+        # 2. Ejecutar la consulta
+        # Usamos una consulta dinámica solo para el ORDER BY
+        query = f'SELECT * FROM bajas ORDER BY {order_by_col} DESC'
+        bajas_raw = db.execute(query).fetchall()
         
-        # Si no encontramos pk, buscar por nombres comunes
-        if not primary_key:
-            for col_name in ['id', 'ID', 'Id', '_id']:
-                if col_name in bajas_columns:
-                    primary_key = col_name
-                    break
-        
-        # Si existe fecha_baja, ordenar por ella, sino ordenar por clave primaria
-        if 'fecha_baja' in bajas_columns:
-            bajas_raw = db.execute('SELECT * FROM bajas ORDER BY fecha_baja DESC').fetchall()
-        elif primary_key:
-            bajas_raw = db.execute(f'SELECT * FROM bajas ORDER BY {primary_key} DESC').fetchall()
-        else:
-            bajas_raw = db.execute('SELECT * FROM bajas').fetchall()
-            
-        # Convertir Row objects a diccionarios y agregar el id extraído
-        bajas = []
-        for row in bajas_raw:
-            row_dict = dict(row)
-            # Agregar 'id' como alias de la clave primaria si existe
-            if primary_key and primary_key in row_dict:
-                row_dict['id'] = row_dict[primary_key]
-            bajas.append(row_dict)
-            
-    except Exception as e:
-        # Si hay error, intentar consulta simple
-        primary_key = 'id'  # Default
-        bajas_raw = db.execute('SELECT * FROM bajas').fetchall()
+        # Convertir a lista de diccionarios (si es necesario) y asegurar la clave 'id'
         bajas = [dict(row) for row in bajas_raw]
-        # Intentar agregar id si existe alguna columna que pueda servir
-        if bajas and primary_key in bajas[0]:
-            for baja in bajas:
-                baja['id'] = baja.get(primary_key)
-    
-    # Si no se encontró primary_key, usar 'id' como default
-    if not primary_key:
-        primary_key = 'id'
-    
-    return render_template('ver_bajas.html', bajas=bajas, primary_key=primary_key)
+        
+    except Exception as e:
+        # En caso de cualquier error (ej. tabla no existe, columna no existe), 
+        # intentar la consulta más simple y registrar el error.
+        print(f"Error al cargar bajas: {e}")
+        try:
+            bajas_raw = db.execute('SELECT * FROM bajas').fetchall()
+            bajas = [dict(row) for row in bajas_raw]
+        except:
+            bajas = [] # Si falla, lista vacía
+
+    # Retorna el template, manteniendo la variable 'bajas' como solicitaste.
+    return render_template('ver_bajas.html', bajas=bajas)
 
 
+# ==============================================================================
+# RUTA PARA ELIMINAR EQUIPO (DE INVENTARIO ACTIVO)
+# ==============================================================================
 @app.route('/eliminar/<int:equipo_id>', methods=['POST'])
 @login_required
 def eliminar_equipo(equipo_id):
+    """Ruta para eliminar un equipo del inventario activo (tabla 'equipos')."""
     if session.get('role') != 'admin':
         flash('Permiso denegado: Solo los administradores pueden eliminar equipos.', 'error')
         return redirect(url_for('dashboard'))
@@ -742,14 +732,20 @@ def eliminar_equipo(equipo_id):
         
         if equipo:
             numero = equipo['numero_inventario']
-            # Eliminar también de la tabla bajas si existe
-            cursor.execute('DELETE FROM bajas WHERE equipo_id = ?', (equipo_id,))
-            # Eliminar de la tabla equipos
+            
+            # NOTA IMPORTANTE: Se ha eliminado la línea de DELETE FROM bajas 
+            # (cursor.execute('DELETE FROM bajas WHERE equipo_id = ?', (equipo_id,)))
+            # ya que la tabla 'bajas' que mencionaste no tiene la columna 'equipo_id'.
+            # Eliminar la baja de la tabla 'bajas' (historial) al eliminar el activo
+            # puede no ser deseado. Si quieres borrar el registro de baja, usa
+            # la función 'eliminar_baja'.
+            
+            # Eliminar de la tabla equipos (inventario activo)
             cursor.execute('DELETE FROM equipos WHERE id = ?', (equipo_id,))
             db.commit()
-            flash(f'Equipo {numero} eliminado permanentemente del sistema.', 'success')
+            flash(f'Equipo {numero} eliminado permanentemente del inventario activo.', 'success')
         else:
-            flash('Error: Equipo no encontrado para eliminar.', 'error')
+            flash('Error: Equipo activo no encontrado para eliminar.', 'error')
 
     except Exception as e:
         flash(f'Ocurrió un error al eliminar el equipo: {e}', 'error')
@@ -757,57 +753,42 @@ def eliminar_equipo(equipo_id):
     return redirect(url_for('dashboard'))
 
 
+# ==============================================================================
+# RUTA PARA ELIMINAR REGISTRO DE BAJA (DE HISTORIAL)
+# ==============================================================================
 @app.route('/eliminar_baja/<baja_id>', methods=['POST'])
 @login_required
 def eliminar_baja(baja_id):
-    """Ruta para eliminar un registro de la tabla bajas."""
+    """Ruta para eliminar un registro de la tabla bajas (historial)."""
     if session.get('role') != 'admin':
         flash('Permiso denegado: Solo los administradores pueden eliminar registros.', 'error')
         return redirect(url_for('ver_bajas'))
 
     try:
         db = get_db()
-        cursor = db.cursor()
         
-        # Detectar la clave primaria de la tabla bajas
+        # Detectar la clave primaria de la tabla bajas para la eliminación segura
         table_info = db.execute("PRAGMA table_info(bajas)").fetchall()
-        primary_key = None
+        primary_key = next((info[1] for info in table_info if info[5] == 1), 'id')
         
-        for info in table_info:
-            if info[5] == 1:  # pk es el índice 5
-                primary_key = info[1]
-                break
-        
-        # Si no encontramos pk, buscar por nombres comunes
-        if not primary_key:
-            bajas_columns = [info[1] for info in table_info]
-            for col_name in ['id', 'ID', 'Id', '_id']:
-                if col_name in bajas_columns:
-                    primary_key = col_name
-                    break
-        
-        # Si aún no encontramos, usar 'id' como default
-        if not primary_key:
-            primary_key = 'id'
-        
-        # Intentar convertir a int si es posible (para IDs numéricos)
-        # Si no es posible, usar el valor como string (para IDs antiguos como 'BJA-2025-0001')
+        # Manejar el tipo de dato del ID (int o string)
         try:
             baja_id_value = int(baja_id)
         except ValueError:
             baja_id_value = baja_id
         
         # Obtener información de la baja antes de eliminarla
-        query = f'SELECT numero_inventario FROM bajas WHERE {primary_key} = ?'
-        baja = db.execute(query, (baja_id_value,)).fetchone()
+        query_select = f'SELECT inventario FROM bajas WHERE {primary_key} = ?'
+        baja = db.execute(query_select, (baja_id_value,)).fetchone()
         
         if baja:
-            numero = baja['numero_inventario']
+            numero = baja['inventario']
+            
             # Eliminar de la tabla bajas usando la clave primaria detectada
             delete_query = f'DELETE FROM bajas WHERE {primary_key} = ?'
-            cursor.execute(delete_query, (baja_id_value,))
+            db.execute(delete_query, (baja_id_value,))
             db.commit()
-            flash(f'Registro de baja del equipo {numero} eliminado permanentemente.', 'success')
+            flash(f'Registro de baja del equipo {numero} (ID: {baja_id_value}) eliminado permanentemente del historial.', 'success')
         else:
             flash('Error: Registro de baja no encontrado para eliminar.', 'error')
 
@@ -815,7 +796,6 @@ def eliminar_baja(baja_id):
         flash(f'Ocurrió un error al eliminar el registro de baja: {e}', 'error')
         
     return redirect(url_for('ver_bajas'))
-
 
 # --- EJECUCIÓN DEL SERVIDOR ---
 

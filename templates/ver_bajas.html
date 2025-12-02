@@ -1,78 +1,163 @@
 {% extends "base.html" %}
 
+{% block title %}Historial de Bajas{% endblock %}
+
 {% block main_content %}
-<div class="container mt-4">
-    <h2 class="mb-4">Histórico de Equipos Dados de Baja</h2>
-    
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+    <!-- Título Principal -->
+    <h1 class="text-4xl font-extrabold text-gray-900 mb-8 border-b-4 border-blue-600 pb-3 tracking-tight flex items-center space-x-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1v-3.25M7 17h10M7 17l.685-2.055a4.25 4.25 0 013.911-2.945h.698a4.25 4.25 0 013.911 2.945L17 17M14 6h-4M7 6h-.5A1.5 1.5 0 005 7.5v2.25M17 6h.5A1.5 1.5 0 0119 7.5v2.25M7 6v10.5M17 6v10.5" />
+        </svg>
+        <span>Historial de Equipos Dados de Baja</span>
+    </h1>
+
     {% if bajas %}
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
+    <p class="text-base text-gray-600 mb-6">Se encontraron <span class="font-bold text-xl text-blue-600">{{ bajas|length }}</span> equipos en el historial de bajas.</p>
+
+    <!-- VISTA DE TABLA (ESCRITORIO / TABLET) - Oculta en móviles -->
+    <div class="hidden md:block shadow-2xl rounded-xl overflow-hidden ring-1 ring-gray-200 mb-8">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-blue-700 text-white">
                     <tr>
-                        <th>Inventario</th>
-                        <th>Equipo</th>
-                        <th>Departamento</th>
-                        <th>Motivo de Baja</th>
-                        <th>Fecha de Baja</th>
-                        {% if session.get('role') == 'admin' %}
-                        <th>Acciones</th>
-                        {% endif %}
+                        <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider w-[10%] rounded-tl-xl">Inventario #</th>
+                        <!-- Columna Marca agregada -->
+                        <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider w-[15%]">Marca</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider w-[25%]">Equipo / Ubicación</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider w-[30%]">Motivo de Baja (Observaciones)</th>
+                        <th class="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider w-[10%]">Fecha de Baja</th>
+                        <th class="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider w-[10%] rounded-tr-xl">Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="bg-white divide-y divide-gray-100">
                     {% for equipo in bajas %}
-                    <tr>
-                        <td>{{ equipo.numero_inventario }}</td>
-                        <td>{{ equipo.equipo }} ({{ equipo.marca or 'N/A' }})</td>
-                        <td>{{ equipo.departamento }}</td>
-                        <td>{{ equipo.motivo_baja or 'No especificado' }}</td>
-                        <td>
-                            {% if equipo.fecha_baja %}
-                                {{ equipo.fecha_baja.split(' ')[0] }}
-                            {% else %}
-                                N/A
+                    <tr class="hover:bg-blue-50 transition duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-extrabold text-blue-700">{{ equipo.inventario or '(N/A)' }}</td>
+                        
+                        <!-- Dato de Marca -->
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ equipo.marca or 'N/A' }}
+                        </td>
+
+                        <td class="px-6 py-4 text-sm text-gray-700">
+                            <strong class="text-gray-900">
+                                <!-- Se mantiene la corrección para el nombre del equipo -->
+                                {{ equipo.equipo or equipo.nombre_equipo or '(N/A - Falla de Datos)' }}
+                            </strong><br>
+                            <span class="text-xs text-gray-500">Ubicación: {{ equipo.ubicacion or 'Sin Asignar' }}</span>
+                        </td>
+                        
+                        <td class="px-6 py-4 text-sm text-gray-700 max-w-sm overflow-hidden text-ellipsis">
+                            <p class="line-clamp-2">{{ equipo.observaciones or 'No especificado' }}</p>
+                        </td>
+                        
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-700">
+                            {{ equipo.fecha_registro or 'N/A' }}
+                        </td>
+                        
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800 border border-red-600 mb-1">BAJA</span>
+                            
+                            {% if session.get('role') == 'admin' %}
+                                <form method="POST" action="{{ url_for('eliminar_baja', baja_id=equipo.id) }}" 
+                                    onsubmit="return confirm('¿Estás seguro de que quieres eliminar PERMANENTEMENTE este registro de baja ({{ equipo.inventario }})?');">
+                                    <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-medium mt-1 inline-block">
+                                        Eliminar de Historial
+                                    </button>
+                                </form>
                             {% endif %}
                         </td>
-                        {% if session.get('role') == 'admin' %}
-                        <td>
-                            {% if equipo.id %}
-                            <form method="POST" action="{{ url_for('eliminar_baja', baja_id=equipo.id) }}" 
-                                  style="display: inline;" 
-                                  onsubmit="return confirm('¿Estás seguro de que deseas eliminar permanentemente este registro de baja?');">
-                                <button type="submit" class="btn btn-danger btn-sm">
-                                    <i class="fas fa-trash"></i> Eliminar
-                                </button>
-                            </form>
-                            {% endif %}
-                        </td>
-                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        
-        <div class="mt-3">
-            <p class="text-muted">
-                <strong>Total de equipos dados de baja:</strong> {{ bajas|length }}
-            </p>
-        </div>
-        
-    {% else %}
-        <div class="alert alert-info" role="alert">
-            <h4 class="alert-heading">No hay equipos dados de baja</h4>
-            <p>No hay equipos registrados como baja en el histórico.</p>
-            <hr>
-            <p class="mb-0">Asegúrate de haber marcado algún equipo con la opción "Dar Baja".</p>
-        </div>
-    {% endif %}
+    </div>
     
-    <div class="mt-4">
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Volver al Dashboard
-        </a>
-        <a href="{{ url_for('registrar_baja') }}" class="btn btn-warning">
-            <i class="fas fa-minus-circle"></i> Dar de Baja Equipo
+    <!-- VISTA DE TARJETAS (MÓVIL) - Usa 'md:hidden' para mostrar solo en celulares -->
+    <div class="md:hidden space-y-4">
+        {% for equipo in bajas %}
+            <div class="bg-white p-4 shadow-xl rounded-xl border border-gray-200">
+                <div class="flex justify-between items-start mb-2 border-b pb-2">
+                    <!-- Inventario # -->
+                    <p class="text-lg font-extrabold text-blue-700">Inventario #{{ equipo.inventario or '(S/N)' }}</p>
+                    <span class="px-3 py-1 text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800 border border-red-600">BAJA</span>
+                </div>
+                
+                <!-- Equipo y Marca (Destacados en tarjeta) -->
+                <p class="text-sm text-gray-500 mb-1">
+                    <span class="font-semibold text-gray-700">Equipo:</span> 
+                    <strong class="text-gray-900">
+                        {{ equipo.equipo or equipo.nombre_equipo or '(N/A - Falla de Datos)' }}
+                    </strong>
+                </p>
+                <p class="text-sm text-gray-500 mb-1">
+                    <span class="font-semibold text-gray-700">Marca:</span> 
+                    <strong class="text-gray-900">{{ equipo.marca or 'N/A' }}</strong>
+                </p>
+                
+                <!-- Ubicación y Fecha de Baja -->
+                <p class="text-sm text-gray-500 mb-1">
+                    <span class="font-semibold text-gray-700">Ubicación:</span> {{ equipo.ubicacion or 'Sin Asignar' }}
+                </p>
+                <p class="text-sm text-gray-500 mb-2">
+                    <span class="font-semibold text-gray-700">Fecha de Baja:</span> 
+                    {{ equipo.fecha_registro or 'N/A' }}
+                </p>
+
+                <!-- Observaciones -->
+                <div class="mt-3 pt-3 border-t text-sm">
+                    <span class="font-semibold text-gray-700 block mb-1">Motivo de Baja:</span>
+                    <p class="text-xs text-gray-600 italic">{{ equipo.observaciones or 'No especificado' }}</p>
+                </div>
+                
+                <!-- Acciones para Admin (Versión Móvil) -->
+                {% if session.get('role') == 'admin' %}
+                    <div class="mt-4 border-t pt-3">
+                        <form method="POST" action="{{ url_for('eliminar_baja', baja_id=equipo.id) }}" 
+                            onsubmit="return confirm('¿Estás seguro de que quieres eliminar PERMANENTEMENTE este registro?');">
+                            <button type="submit" class="w-full text-red-500 hover:text-red-700 text-sm font-medium py-2 px-2 rounded-lg border border-red-300 hover:bg-red-50 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Eliminar de Historial
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Mensaje si no hay equipos dados de baja -->
+    <div class="text-center py-16 bg-white rounded-xl shadow-2xl border-2 border-dashed border-blue-300">
+        <svg class="mx-auto h-16 w-16 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.86-1.543-.86-3.321 0-4.864 1.467-2.677 4.385-2.677 5.852 0C11.55 12.04 12 14.188 12 16.5c0 .243.01.485.029.726C12.167 19.336 12 21 12 21h7.5c1.24 0 2.25-.806 2.25-1.795V16.5A.75.75 0 0021 15.75H8.625zM12 21a9 9 0 100-18 9 9 0 000 18z" />
+        </svg>
+        <h3 class="mt-4 text-2xl font-semibold text-gray-900">Historial de Bajas Vacío</h3>
+        <p class="mt-2 text-base text-gray-600">
+            Aún no se ha registrado ningún equipo como dado de baja en el sistema.
+        </p>
+        <div class="mt-8">
+            <a href="{{ url_for('registrar_baja') }}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-xl shadow-lg text-white bg-blue-600 hover:bg-blue-700 transition transform hover:scale-[1.05]">
+                <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.86-1.543-.86-3.321 0-4.864 1.467-2.677 4.385-2.677 5.852 0C11.55 12.04 12 14.188 12 16.5c0 .243.01.485.029.726C12.167 19.336 12 21 12 21h7.5c1.24 0 2.25-.806 2.25-1.795V16.5A.75.75 0 0021 15.75H8.625zM12 21a9 9 0 100-18 9 9 0 000 18z" />
+                </svg>
+                Registrar una Baja Ahora
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Botón para volver al Dashboard -->
+    <div class="mt-8 flex justify-center">
+        <a href="{{ url_for('dashboard') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition duration-150 shadow-md flex items-center space-x-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Volver al Inventario Activo</span>
         </a>
     </div>
 </div>

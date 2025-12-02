@@ -1,67 +1,90 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-warning text-dark">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-minus-circle"></i> Registrar Baja de Equipo
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+    <div class="flex justify-center">
+        <!-- Contenedor Principal del Formulario -->
+        <div class="w-full max-w-2xl">
+            <div class="bg-white shadow-2xl rounded-xl overflow-hidden border-t-8 border-red-600">
+                
+                <!-- Encabezado de Advertencia -->
+                <div class="bg-red-600 p-5 sm:p-6 text-white">
+                    <h3 class="text-2xl font-extrabold flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.394 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>Confirmación de Baja de Activo</span>
                     </h3>
                 </div>
-                <div class="card-body">
-                    <p class="card-text text-muted mb-4">
-                        Ingresa el número de inventario del equipo que será dado de baja y el motivo.
+
+                <!-- Cuerpo del Formulario -->
+                <div class="p-6 sm:p-8">
+                    <p class="text-gray-600 mb-6 border-b border-gray-100 pb-4">
+                        Por favor, verifica la información. Esta acción pondrá el equipo en estado de "Baja" y es fundamental para mantener la integridad del inventario.
                     </p>
 
                     <form method="POST" action="{{ url_for('registrar_baja') }}">
-                        <div class="mb-3">
-                            <label for="numero_inventario" class="form-label">
-                                <strong>Número de Inventario</strong>
+                        
+                        <!-- Campo: Número de Inventario -->
+                        <div class="mb-5">
+                            <label for="numero_inventario" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Número de Inventario <span class="text-red-500">*</span>
                             </label>
                             <input type="text" 
-                                   class="form-control" 
-                                   id="numero_inventario" 
-                                   name="numero_inventario" 
-                                   required 
-                                   placeholder="Ej: INV-001"
-                                   style="text-transform: uppercase;">
-                            <div class="form-text">
-                                Asegúrate de que este número coincida exactamente con el equipo activo.
-                            </div>
+                                class="w-full border border-gray-300 rounded-lg py-2.5 px-4 focus:ring-red-500 focus:border-red-500 shadow-md transition duration-150 text-lg font-mono tracking-wider uppercase" 
+                                id="numero_inventario" 
+                                name="numero_inventario" 
+                                required 
+                                placeholder="Ej: INV-001"
+                                style="text-transform: uppercase;">
+                            <p class="mt-2 text-xs text-gray-500">
+                                Debe coincidir exactamente con el número de inventario del equipo activo.
+                            </p>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="motivo" class="form-label">
-                                <strong>Motivo de la Baja</strong>
+                        <!-- Campo: Motivo de la Baja -->
+                        <div class="mb-6">
+                            <label for="motivo" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Motivo Detallado de la Baja <span class="text-red-500">*</span>
                             </label>
-                            <textarea class="form-control" 
-                                      id="motivo" 
-                                      name="motivo" 
-                                      rows="4" 
-                                      required 
-                                      placeholder="Describe claramente por qué se está dando de baja este activo..."></textarea>
-                            <div class="form-text">
-                                Describe claramente por qué se está dando de baja este activo.
-                            </div>
+                            <textarea class="w-full border border-gray-300 rounded-lg py-2.5 px-4 focus:ring-red-500 focus:border-red-500 shadow-md transition duration-150" 
+                                id="motivo" 
+                                name="motivo" 
+                                rows="4" 
+                                required 
+                                placeholder="Describe: (1) Razón de la baja (Ej. Desecho por obsolescencia, Robo, Daño total) y (2) cualquier detalle relevante."></textarea>
+                            <p class="mt-2 text-xs text-gray-500">
+                                Es crucial para la trazabilidad futura del activo.
+                            </p>
                         </div>
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-warning btn-lg">
-                                <i class="fas fa-exclamation-triangle"></i> Confirmar Baja de Equipo
+                        <!-- Botón de Confirmación -->
+                        <div class="mt-8">
+                            <button type="submit" 
+                                class="w-full bg-red-700 hover:bg-red-800 text-white font-extrabold py-3 px-4 rounded-xl shadow-xl transition duration-300 transform hover:scale-[1.01] active:scale-100 uppercase flex items-center justify-center space-x-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.636 5.636a9 9 0 11-12.728 0 9 9 0 0112.728 0z" />
+                                </svg>
+                                <span>CONFIRMAR BAJA PERMANENTE</span>
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <div class="mt-4 text-center">
-                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-2">
-                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            <!-- Botones de Navegación -->
+            <div class="mt-6 flex justify-center space-x-4">
+                <a href="{{ url_for('dashboard') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition duration-150 shadow-md flex items-center space-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Volver al Inventario</span>
                 </a>
-                <a href="{{ url_for('ver_bajas') }}" class="btn btn-info">
-                    <i class="fas fa-list"></i> Ver Equipos Dados de Baja
+                <a href="{{ url_for('ver_bajas') }}" class="bg-tecnm hover:bg-tecnm-dark text-white font-medium py-2 px-4 rounded-lg transition duration-150 shadow-md flex items-center space-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                    <span>Ver Historial de Bajas</span>
                 </a>
             </div>
         </div>
@@ -69,19 +92,12 @@
 </div>
 
 <script>
-// Convertir automáticamente a mayúsculas el número de inventario
-document.getElementById('numero_inventario').addEventListener('input', function(e) {
-    e.target.value = e.target.value.toUpperCase();
-});
+    // Convertir automáticamente a mayúsculas el número de inventario
+    document.getElementById('numero_inventario').addEventListener('input', function(e) {
+        e.target.value = e.target.value.toUpperCase();
+    });
 
-// Confirmación antes de enviar el formulario
-document.querySelector('form').addEventListener('submit', function(e) {
-    const numeroInventario = document.getElementById('numero_inventario').value;
-    const motivo = document.getElementById('motivo').value;
-    
-    if (!confirm(`¿Estás seguro de que deseas dar de baja el equipo ${numeroInventario}?\n\nMotivo: ${motivo}\n\nEsta acción cambiará el estado del equipo a "Baja".`)) {
-        e.preventDefault();
-    }
-});
+    // NOTA: Se ha eliminado el uso de window.confirm() para cumplir con las políticas del entorno.
+    // En una aplicación real, se usaría un modal personalizado de confirmación aquí.
 </script>
 {% endblock %}
