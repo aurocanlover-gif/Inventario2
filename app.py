@@ -24,6 +24,10 @@ else:
         cred = credentials.Certificate(info_dict)
     else:
         raise ValueError("Error: No se encontró la variable FIREBASE_JSON en Render")
+    if not firebase_admin._apps:
+    initialize_app(cred, {
+        'databaseURL': 'https://inventario-render-default-rtdb.firebaseio.com'
+    })
 
 # 2. Inicializamos la App una sola vez
 initialize_app(cred)
