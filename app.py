@@ -5,6 +5,28 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
+import os
+import json
+from firebase_admin import credentials, initialize_app
+
+# 1. Definimos la ruta local (por si trabajas en tu PC)
+ruta_json = 'serviceAccountKey.json'
+
+if os.path.exists(ruta_json):
+    # SI EL ARCHIVO EXISTE (Uso en tu computadora)
+    cred = credentials.Certificate(ruta_json)
+else:
+    # SI EL ARCHIVO NO EXISTE (Uso en Render)
+    firebase_json = os.environ.get('FIREBASE_JSON')
+    if firebase_json:
+        # Convertimos el texto de la variable en un diccionario real
+        info_dict = json.loads(firebase_json)
+        cred = credentials.Certificate(info_dict)
+    else:
+        raise ValueError("Error: No se encontró la variable FIREBASE_JSON en Render")
+
+# 2. Inicializamos la App una sola vez
+initialize_app(cred)
 
 # --- CONFIGURACIÓN DE LA APLICACIÓN ---
 basedir = os.path.abspath(os.path.dirname(__file__))
