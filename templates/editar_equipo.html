@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Equipo | Inventario TECNM{% endblock %}
+
+{% block main_content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-10 mb-10">
+    <div class="flex items-center mb-6 border-b-2 border-amber-500 pb-2">
+        <h1 class="text-3xl font-extrabold text-gray-800">
+            Actualizar Registro
+        </h1>
+        <span class="ml-4 bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            Modo Edición
+        </span>
+    </div>
+
+    <div class="bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <p class="text-sm text-gray-600">
+                Estás editando el equipo con número de inventario: 
+                <span class="font-bold text-tecnm">{{ equipo.numero_inventario }}</span>
+            </p>
+        </div>
+
+        <form action="{{ url_for('editar_equipo', equipo_id=equipo_id) }}" method="POST" class="p-6 space-y-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Tipo de Equipo</label>
+                    <input type="text" name="equipo" value="{{ equipo.equipo }}" required
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-tecnm focus:border-tecnm outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Marca / Fabricante</label>
+                    <input type="text" name="marca" value="{{ equipo.marca }}"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-tecnm focus:border-tecnm outline-none transition">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Modelo</label>
+                    <input type="text" name="modelo" value="{{ equipo.modelo }}"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-tecnm focus:border-tecnm outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Número de Serie</label>
+                    <input type="text" name="numero_serie" value="{{ equipo.numero_serie }}"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-tecnm focus:border-tecnm outline-none transition">
+                </div>
+            </div>
+
+            <hr class="border-gray-100">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2 bg-amber-50 p-4 rounded-xl border border-amber-100">
+                    <label class="block text-sm font-bold text-amber-800 mb-1 italic">Ubicación Física Actualizada</label>
+                    <input type="text" name="ubicacion" value="{{ equipo.ubicacion }}" required
+                           placeholder="Ej. Aula 10, Edificio C, Planta Alta..."
+                           class="w-full border border-amber-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-amber-500 outline-none shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Departamento</label>
+                    <input type="text" name="departamento" value="{{ equipo.departamento }}" required
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-tecnm focus:border-tecnm outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Responsable</label>
+                    <input type="text" name="nombre" value="{{ equipo.nombre }}"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-tecnm focus:border-tecnm outline-none transition">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Estado de Operación</label>
+                    <select name="estado" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-tecnm outline-none">
+                        <option value="Activo" {% if equipo.estado == 'Activo' %}selected{% endif %}>🟢 Activo</option>
+                        <option value="Revisión" {% if equipo.estado == 'Revisión' %}selected{% endif %}>🟡 En Revisión</option>
+                        <option value="Baja" {% if equipo.estado == 'Baja' %}selected{% endif %}>🔴 Baja Definitiva</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Observaciones / Detalles Técnicos</label>
+                    <textarea name="observaciones" rows="2" 
+                              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-tecnm outline-none transition">{{ equipo.observaciones }}</textarea>
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-end items-center space-y-3 md:space-y-0 md:space-x-4 pt-4 border-t border-gray-100">
+                <a href="{{ url_for('dashboard') }}" 
+                   class="w-full md:w-auto text-center text-gray-500 hover:text-gray-700 font-medium px-6 py-2 transition">
+                    Cancelar y Volver
+                </a>
+                <button type="submit" 
+                        class="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-8 rounded-lg shadow-lg transform hover:scale-105 transition duration-150">
+                    Guardar Cambios
+                </button>
+            </div>
+            
+            <input type="hidden" name="numero_inventario" value="{{ equipo.numero_inventario }}">
+        </form>
+    </div>
+</div>
+{% endblock %}
