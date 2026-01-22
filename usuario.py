@@ -9,7 +9,9 @@ ruta_json = os.path.join(basedir, 'serviceAccountKey.json')
 
 if not firebase_admin._apps:
     cred = credentials.Certificate(ruta_json)
-    firebase_admin.initialize_app(cred)
+    firebase_admin.initialize_app(cred, {
+        'databaseURL':'https://inventario-render-default-rtdb.firebaseio.com/'
+    })
 
 db = firestore.client()
 
