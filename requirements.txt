@@ -1,2 +1,5 @@
-Flask 
-gunicorn==20.1.0
+Flask
+flask-login
+firebase-admin
+google-auth
+gunicorn
