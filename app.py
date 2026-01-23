@@ -29,8 +29,11 @@ else:
         'databaseURL': 'https://inventario-render-default-rtdb.firebaseio.com'
     })
 
-# 2. Inicializamos la App una sola vez
-initialize_app(cred)
+# Reemplaza tu initialize_app(cred) por esto:
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+else:
+    firebase_admin.get_app()
 
 # --- CONFIGURACIÓN DE LA APLICACIÓN ---
 basedir = os.path.abspath(os.path.dirname(__file__))
