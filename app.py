@@ -115,17 +115,16 @@ def logout():
 # ==============================================================================
 # RUTAS DE INVENTARIO (FIREBASE)
 # ==============================================================================
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
     try:
-        # 1. Obtenemos los parámetros de búsqueda y filtro
         filtro_tipo = request.args.get('tipo', '')
-        busqueda = request.args.get('busqueda', '').lower().strip() # Capturamos la búsqueda
-        
         equipos_ref = db.collection('equipos')
         
-        # 2. Traemos los equipos activos
+        # 1. Traemos los equipos activos
+        # Nota: Usamos filter(field, op, val) para evitar el Warning de Google
         query = equipos_ref.where('estado', '==', 'Activo')
 
         if filtro_tipo:
@@ -134,34 +133,17 @@ def dashboard():
         docs = query.stream()
 
         equipos_activos = []
+        # Usamos un set para los tipos del menú desplegable
         tipos_set = set()
 
-        # 3. Procesamos los resultados con Filtro de Búsqueda Manual
+        # 2. Procesamos los resultados del filtro
         for doc in docs:
             item = doc.to_dict()
             item['id'] = doc.id
-            
-            # --- LÓGICA DE BÚSQUEDA (Case Insensitive) ---
-            # Convertimos campos a minúsculas para comparar sin errores
-            nombre = item.get('equipo', '').lower()
-            marca = item.get('marca', '').lower()
-            modelo = item.get('modelo', '').lower()
-            serie = item.get('numero_serie', '').lower()
-            inv_num = str(item.get('numero_inventario', '')).lower()
+            equipos_activos.append(item)
 
-            # Si no hay búsqueda o si coincide con algún campo, lo agregamos
-            if not busqueda or (busqueda in nombre or 
-                                busqueda in marca or 
-                                busqueda in modelo or
-                                busqueda in serie or
-                                busqueda in inv_num):
-                equipos_activos.append(item)
-
-        # 4. ORDENAR: Invertimos la lista para que el más nuevo salga primero
-        # Nota: Como Firebase no garantiza orden sin un campo 'timestamp', invertimos la lista recibida
-        equipos_activos.reverse()
-
-        # 5. Traer tipos para el menú desplegable
+        # 3. PASO EXTRA: Traer TODOS los tipos para el filtro (sin importar el filtro actual)
+        # Esto evita que el menú de filtros se quede vacío
         todas_las_opciones = equipos_ref.where('estado', '==', 'Activo').stream()
         for d in todas_las_opciones:
             datos = d.to_dict()
@@ -175,6 +157,8 @@ def dashboard():
     
     except Exception as e:
         print(f"Error real en dashboard: {e}")
+        # IMPORTANTE: No redirecciones aquí para evitar el bucle infinito
+        # Mejor muestra la página vacía pero con el error impreso en consola
         return render_template('dashboard.html', equipos=[], tipos_disponibles=[], filtro_tipo='')
 
 @app.route('/agregar', methods=['GET', 'POST'])
