@@ -115,51 +115,35 @@ def logout():
 # ==============================================================================
 # RUTAS DE INVENTARIO (FIREBASE)
 # ==============================================================================
-
 @app.route('/dashboard')
-@login_required
 def dashboard():
-    try:
-        filtro_tipo = request.args.get('tipo', '')
-        equipos_ref = db.collection('equipos')
-        
-        # 1. Traemos los equipos activos
-        # Nota: Usamos filter(field, op, val) para evitar el Warning de Google
-        query = equipos_ref.where('estado', '==', 'Activo')
-
-        if filtro_tipo:
-            query = query.where('equipo', '==', filtro_tipo)
-
-        docs = query.stream()
-
-        equipos_activos = []
-        # Usamos un set para los tipos del menú desplegable
-        tipos_set = set()
-
-        # 2. Procesamos los resultados del filtro
-        for doc in docs:
-            item = doc.to_dict()
-            item['id'] = doc.id
-            equipos_activos.append(item)
-
-        # 3. PASO EXTRA: Traer TODOS los tipos para el filtro (sin importar el filtro actual)
-        # Esto evita que el menú de filtros se quede vacío
-        todas_las_opciones = equipos_ref.where('estado', '==', 'Activo').stream()
-        for d in todas_las_opciones:
-            datos = d.to_dict()
-            if 'equipo' in datos and datos['equipo']:
-                tipos_set.add(datos['equipo'])
-
-        return render_template('dashboard.html', 
-                               equipos=equipos_activos, 
-                               tipos_disponibles=sorted(list(tipos_set)),
-                               filtro_tipo=filtro_tipo)
+    # 1. Capturamos la búsqueda y la pasamos a minúsculas de una vez
+    busqueda = request.args.get('busqueda', '').lower().strip()
     
-    except Exception as e:
-        print(f"Error real en dashboard: {e}")
-        # IMPORTANTE: No redirecciones aquí para evitar el bucle infinito
-        # Mejor muestra la página vacía pero con el error impreso en consola
-        return render_template('dashboard.html', equipos=[], tipos_disponibles=[], filtro_tipo='')
+    ref = db.reference('equipos')
+    equipos_data = ref.get() or {}
+
+    lista_equipos = []
+    for id_firebase, info in equipos_data.items():
+        info['id'] = id_firebase  # No olvides guardar el ID para poder editar
+        
+        # 2. Preparamos los textos del equipo en minúsculas para comparar
+        nombre_equipo = info.get('equipo', '').lower()
+        marca_equipo = info.get('marca', '').lower()
+        modelo_equipo = info.get('modelo', '').lower()
+        inv_num = str(info.get('numero_inventario', '')).lower()
+
+        # 3. Si no hay búsqueda, o si coincide con nombre, marca, modelo o número
+        if not busqueda or (busqueda in nombre_equipo or 
+                            busqueda in marca_equipo or 
+                            busqueda in modelo_equipo or
+                            busqueda in inv_num):
+            lista_equipos.append(info)
+
+    # 4. INVERTIMOS LA LISTA: El último registro en Firebase será el primero en la tabla
+    lista_equipos.reverse()
+
+    return render_template('dashboard.html', equipos=lista_equipos)
 
 @app.route('/agregar', methods=['GET', 'POST'])
 @login_required
