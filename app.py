@@ -25,7 +25,7 @@ else:
     else:
         raise ValueError("Error: No se encontró la variable FIREBASE_JSON en Render")
     if not firebase_admin._apps:
-    initialize_app(cred, {
+        initialize_app(cred, {
         'databaseURL': 'https://inventario-render-default-rtdb.firebaseio.com'
     })
 
