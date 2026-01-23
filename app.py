@@ -116,34 +116,66 @@ def logout():
 # RUTAS DE INVENTARIO (FIREBASE)
 # ==============================================================================
 @app.route('/dashboard')
+@login_required
 def dashboard():
-    # 1. Capturamos la búsqueda y la pasamos a minúsculas de una vez
-    busqueda = request.args.get('busqueda', '').lower().strip()
-    
-    ref = db.reference('equipos')
-    equipos_data = ref.get() or {}
-
-    lista_equipos = []
-    for id_firebase, info in equipos_data.items():
-        info['id'] = id_firebase  # No olvides guardar el ID para poder editar
+    try:
+        # 1. Obtenemos los parámetros de búsqueda y filtro
+        filtro_tipo = request.args.get('tipo', '')
+        busqueda = request.args.get('busqueda', '').lower().strip() # Capturamos la búsqueda
         
-        # 2. Preparamos los textos del equipo en minúsculas para comparar
-        nombre_equipo = info.get('equipo', '').lower()
-        marca_equipo = info.get('marca', '').lower()
-        modelo_equipo = info.get('modelo', '').lower()
-        inv_num = str(info.get('numero_inventario', '')).lower()
+        equipos_ref = db.collection('equipos')
+        
+        # 2. Traemos los equipos activos
+        query = equipos_ref.where('estado', '==', 'Activo')
 
-        # 3. Si no hay búsqueda, o si coincide con nombre, marca, modelo o número
-        if not busqueda or (busqueda in nombre_equipo or 
-                            busqueda in marca_equipo or 
-                            busqueda in modelo_equipo or
-                            busqueda in inv_num):
-            lista_equipos.append(info)
+        if filtro_tipo:
+            query = query.where('equipo', '==', filtro_tipo)
 
-    # 4. INVERTIMOS LA LISTA: El último registro en Firebase será el primero en la tabla
-    lista_equipos.reverse()
+        docs = query.stream()
 
-    return render_template('dashboard.html', equipos=lista_equipos)
+        equipos_activos = []
+        tipos_set = set()
+
+        # 3. Procesamos los resultados con Filtro de Búsqueda Manual
+        for doc in docs:
+            item = doc.to_dict()
+            item['id'] = doc.id
+            
+            # --- LÓGICA DE BÚSQUEDA (Case Insensitive) ---
+            # Convertimos campos a minúsculas para comparar sin errores
+            nombre = item.get('equipo', '').lower()
+            marca = item.get('marca', '').lower()
+            modelo = item.get('modelo', '').lower()
+            serie = item.get('numero_serie', '').lower()
+            inv_num = str(item.get('numero_inventario', '')).lower()
+
+            # Si no hay búsqueda o si coincide con algún campo, lo agregamos
+            if not busqueda or (busqueda in nombre or 
+                                busqueda in marca or 
+                                busqueda in modelo or
+                                busqueda in serie or
+                                busqueda in inv_num):
+                equipos_activos.append(item)
+
+        # 4. ORDENAR: Invertimos la lista para que el más nuevo salga primero
+        # Nota: Como Firebase no garantiza orden sin un campo 'timestamp', invertimos la lista recibida
+        equipos_activos.reverse()
+
+        # 5. Traer tipos para el menú desplegable
+        todas_las_opciones = equipos_ref.where('estado', '==', 'Activo').stream()
+        for d in todas_las_opciones:
+            datos = d.to_dict()
+            if 'equipo' in datos and datos['equipo']:
+                tipos_set.add(datos['equipo'])
+
+        return render_template('dashboard.html', 
+                               equipos=equipos_activos, 
+                               tipos_disponibles=sorted(list(tipos_set)),
+                               filtro_tipo=filtro_tipo)
+    
+    except Exception as e:
+        print(f"Error real en dashboard: {e}")
+        return render_template('dashboard.html', equipos=[], tipos_disponibles=[], filtro_tipo='')
 
 @app.route('/agregar', methods=['GET', 'POST'])
 @login_required
