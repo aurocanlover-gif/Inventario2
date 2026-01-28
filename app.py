@@ -9,55 +9,32 @@ import os
 import json
 from firebase_admin import credentials, initialize_app
 
-# 1. Definimos la ruta local (por si trabajas en tu PC)
-ruta_json = 'serviceAccountKey.json'
-
-if os.path.exists(ruta_json):
-    # SI EL ARCHIVO EXISTE (Uso en tu computadora)
-    cred = credentials.Certificate(ruta_json)
+# --- CONFIGURACIÓN DE FIREBASE (LIMPIO Y ÚNICO) ---
+# 1. Intentamos obtener las credenciales
+if os.environ.get('FIREBASE_JSON'):
+    # Caso: Render (Usa la variable de entorno)
+    cred_dict = json.loads(os.environ.get('FIREBASE_JSON'))
+    cred = credentials.Certificate(cred_dict)
+elif os.path.exists('serviceAccountKey.json'):
+    # Caso: Tu PC (Usa el archivo local si existe)
+    cred = credentials.Certificate('serviceAccountKey.json')
 else:
-    # SI EL ARCHIVO NO EXISTE (Uso en Render)
-    firebase_json = os.environ.get('FIREBASE_JSON')
-    if firebase_json:
-        # Convertimos el texto de la variable en un diccionario real
-        info_dict = json.loads(firebase_json)
-        cred = credentials.Certificate(info_dict)
-    else:
-        raise ValueError("Error: No se encontró la variable FIREBASE_JSON en Render")
-    if not firebase_admin._apps:
-        initialize_app(cred, {
-        'databaseURL': 'https://inventario-render-default-rtdb.firebaseio.com'
-    })
+    raise ValueError("No se encontraron credenciales de Firebase")
 
-# Reemplaza tu initialize_app(cred) por esto:
+# 2. Inicialización ÚNICA de la App
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 else:
     firebase_admin.get_app()
 
-# --- CONFIGURACIÓN DE LA APLICACIÓN ---
-basedir = os.path.abspath(os.path.dirname(__file__))
-template_dir = os.path.join(basedir, 'templates')
-
-app = Flask(__name__, template_folder=template_dir)
-
-# Clave secreta para sesiones (puedes dejar la que tenías o usar una fija)
-app.secret_key = 'inventario_escolar_perote_2026' 
-
-# --- CONFIGURACIÓN DE FIREBASE ---
-# Buscamos el archivo JSON de credenciales que descargaste
-ruta_json = os.path.join(basedir, 'serviceAccountKey.json')
-
-
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
-else:
-    firebase_admin.get_app()
-
-
-
-# Esta es nuestra conexión global a la base de datos
+# 3. Conexión a la base de datos
 db = firestore.client()
+
+# --- CONFIGURACIÓN DE LA APLICACIÓN FLASK ---
+app = Flask(__name__)
+app.secret_key = 'inventario_escolar_perote_2026'
+
+
 
 
 # --- DECORADOR DE REQUERIMIENTO DE LOGIN ---
