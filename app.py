@@ -48,9 +48,13 @@ app.secret_key = 'inventario_escolar_perote_2026'
 # Buscamos el archivo JSON de credenciales que descargaste
 ruta_json = os.path.join(basedir, 'serviceAccountKey.json')
 
+
 if not firebase_admin._apps:
-    cred = credentials.Certificate(ruta_json)
     firebase_admin.initialize_app(cred)
+else:
+    firebase_admin.get_app()
+
+
 
 # Esta es nuestra conexión global a la base de datos
 db = firestore.client()
