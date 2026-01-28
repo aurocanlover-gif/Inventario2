@@ -60,18 +60,6 @@ else:
 db = firestore.client()
 
 
-
-ruta_json = os.path.join(basedir, 'serviceAccountKey.json')
-
-if not firebase_admin._apps:
-    cred = credentials.Certificate(ruta_json)
-    firebase_admin.initialize_app(cred)
-
-db = firestore.client()
-
-
-
-
 # --- DECORADOR DE REQUERIMIENTO DE LOGIN ---
 def login_required(f):
     @wraps(f) # Es mejor usar @wraps para que Flask no se confunda con los nombres de las funciones
