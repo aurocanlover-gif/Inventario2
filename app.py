@@ -9,28 +9,26 @@ import os
 import json
 from firebase_admin import credentials, initialize_app
 
-# --- CONFIGURACIÓN DE FIREBASE (EL ÚNICO QUE NECESITAS) ---
 firebase_json = os.environ.get('FIREBASE_JSON')
 
-try:
-    if firebase_json:
-        # PRIMERA OPCIÓN: Usar la variable de Render (JSON en texto)
-        cred_dict = json.loads(firebase_json)
-        cred = credentials.Certificate(cred_dict)
-    else:
-        # SEGUNDA OPCIÓN: Usar el archivo local (Solo para tu PC)
-        cred = credentials.Certificate('serviceAccountKey.json')
-
-    if not firebase_admin._apps:
-        firebase_admin.initialize_app(cred)
+if firebase_json:
+    # Reparación manual de saltos de línea por si Render los dañó
+    import json
+    # Reemplazamos posibles errores de escape
+    cred_dict = json.loads(firebase_json, strict=False)
+    # Forzamos que la private_key tenga los saltos de línea correctos
+    if 'private_key' in cred_dict:
+        cred_dict['private_key'] = cred_dict['private_key'].replace('\\n', '\n')
     
-    db = firestore.client()
-    print("Conexión exitosa a Firebase")
+    cred = credentials.Certificate(cred_dict)
+else:
+    # Local para tu PC
+    cred = credentials.Certificate('serviceAccountKey.json')
 
-except Exception as e:
-    print(f"Error conectando a Firebase: {e}")
-    # Definimos db como None para que no explote el resto del código de inmediato
-    db = None
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+
+db = firestore.client()
 
 # --- CONFIGURACIÓN DE LA APLICACIÓN FLASK ---
 app = Flask(__name__)
