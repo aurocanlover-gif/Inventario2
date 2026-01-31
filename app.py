@@ -9,26 +9,32 @@ import os
 import json
 from firebase_admin import credentials, initialize_app
 
-firebase_json = os.environ.get('FIREBASE_JSON')
+import base64
+import json
+import os
+import firebase_admin
+from firebase_admin import credentials, firestore
 
-if firebase_json:
-    # Reparación manual de saltos de línea por si Render los dañó
-    import json
-    # Reemplazamos posibles errores de escape
-    cred_dict = json.loads(firebase_json, strict=False)
-    # Forzamos que la private_key tenga los saltos de línea correctos
-    if 'private_key' in cred_dict:
-        cred_dict['private_key'] = cred_dict['private_key'].replace('\\n', '\n')
-    
-    cred = credentials.Certificate(cred_dict)
-else:
-    # Local para tu PC
-    cred = credentials.Certificate('serviceAccountKey.json')
+# --- INICIALIZACIÓN DE FIREBASE (MÉTODO SEGURO) ---
+encoded_json = os.environ.get('FIREBASE_BASE64')
 
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
+try:
+    if encoded_json:
+        # Esto convierte el texto raro de vuelta al JSON perfecto
+        decoded_bytes = base64.b64decode(encoded_json)
+        cred_dict = json.loads(decoded_bytes)
+        cred = credentials.Certificate(cred_dict)
+    else:
+        # Por si lo corres en tu compu local
+        cred = credentials.Certificate('serviceAccountKey.json')
 
-db = firestore.client()
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    print("¡Conexión validada exitosamente!")
+except Exception as e:
+    print(f"Error de conexión: {e}")
+    db = None
 
 # --- CONFIGURACIÓN DE LA APLICACIÓN FLASK ---
 app = Flask(__name__)
