@@ -15,27 +15,30 @@ import os
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# --- INICIALIZACIÓN DE FIREBASE (MÉTODO SEGURO) ---
 encoded_json = os.environ.get('FIREBASE_BASE64')
 
 try:
     if encoded_json:
-        # Esto convierte el texto raro de vuelta al JSON perfecto
+        # Intentamos decodificar
         decoded_bytes = base64.b64decode(encoded_json)
         cred_dict = json.loads(decoded_bytes)
         cred = credentials.Certificate(cred_dict)
+        print("✅ Base64 decodificado correctamente")
     else:
-        # Por si lo corres en tu compu local
+        # Intento local
         cred = credentials.Certificate('serviceAccountKey.json')
+        print("🏠 Usando archivo local")
 
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
     db = firestore.client()
-    print("¡Conexión validada exitosamente!")
-except Exception as e:
-    print(f"Error de conexión: {e}")
-    db = None
+    print("🚀 Conexión exitosa a Firestore")
 
+except Exception as e:
+    # ESTO NOS DIRÁ EL ERROR REAL EN LOS LOGS
+    print(f"❌ ERROR CRÍTICO EN CONEXIÓN: {str(e)}")
+    db = None
+    
 # --- CONFIGURACIÓN DE LA APLICACIÓN FLASK ---
 app = Flask(__name__)
 app.secret_key = 'inventario_escolar_perote_2026'
