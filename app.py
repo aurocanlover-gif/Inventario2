@@ -5,27 +5,37 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
-import os
-import json
+
 from firebase_admin import credentials, initialize_app
 
+
+
+# --- CONFIGURACIÓN DE FIREBASE (LIMPIEZA ANTIBALAS) ---
 import base64
 import json
-import os
-import firebase_admin
-from firebase_admin import credentials, firestore
+
 
 encoded_json = os.environ.get('FIREBASE_BASE64')
 
 try:
     if encoded_json:
-        # Intentamos decodificar
+        # 1. Quitamos espacios o saltos de línea que Render mete por error
+        encoded_json = encoded_json.strip()
+        
+        # 2. Decodificamos
         decoded_bytes = base64.b64decode(encoded_json)
-        cred_dict = json.loads(decoded_bytes)
+        decoded_str = decoded_bytes.decode('utf-8')
+        
+        # 3. LIMPIEZA EXTREMA: Quitamos cualquier cosa rara antes de la primera '{' 
+        # y después de la última '}' por si el sistema metió basura.
+        inicio = decoded_str.find('{')
+        fin = decoded_str.rfind('}') + 1
+        json_limpio = decoded_str[inicio:fin]
+        
+        cred_dict = json.loads(json_limpio)
         cred = credentials.Certificate(cred_dict)
-        print("✅ Base64 decodificado correctamente")
+        print("✅ Base64 extraído y limpiado con éxito")
     else:
-        # Intento local
         cred = credentials.Certificate('serviceAccountKey.json')
         print("🏠 Usando archivo local")
 
@@ -35,10 +45,10 @@ try:
     print("🚀 Conexión exitosa a Firestore")
 
 except Exception as e:
-    # ESTO NOS DIRÁ EL ERROR REAL EN LOS LOGS
+    # Este print ahora nos dirá más detalles
     print(f"❌ ERROR CRÍTICO EN CONEXIÓN: {str(e)}")
     db = None
-    
+
 # --- CONFIGURACIÓN DE LA APLICACIÓN FLASK ---
 app = Flask(__name__)
 app.secret_key = 'inventario_escolar_perote_2026'
